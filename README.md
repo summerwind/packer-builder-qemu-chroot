@@ -12,7 +12,7 @@ This plugin depends on the following tools:
 
 ## Install
 
-Download the binary from the [release]() page and place it in one of the following places:
+Download the binary from the [Releases](https://github.com/summerwind/packer-builder-qemu-chroot/releases) page and place it in one of the following places:
 
 - The directory where packer is, or the executable directory
 - `~/.packer.d/plugins` on Unix systems or `%APPDATA%/packer.d/plugins` on Windows
@@ -70,7 +70,7 @@ $ vim template.json
 Once you have the template, build it using Packer.
 
 ```
-$ packer build template.json
+$ sudo packer build template.json
 ```
 
 ## Configuration Reference
@@ -124,4 +124,5 @@ These default mounts are usually good enough for anyone and are sane defaults. H
 
 Mozilla Public License 2.0
 
-Note that this plugin is implemented by forking AMI Builder (chroot) of Packer.
+Note that this plugin is implemented by forking [AMI Builder (chroot)](https://www.packer.io/docs/builders/amazon-chroot.html) of Packer.
+
