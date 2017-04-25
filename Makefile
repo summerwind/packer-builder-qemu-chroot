@@ -25,7 +25,7 @@ dist:
 	mkdir -p dist
 	
 	GOARCH=amd64 GOOS=linux go build $(BUILD_FLAGS) .
-	tar -czf release/packer-builder-qemu-chroot_linux_amd64.tar.gz packer-builder-qemu-chroot
+	tar -czf dist/packer-builder-qemu-chroot_linux_amd64.tar.gz packer-builder-qemu-chroot
 	rm -rf packer-builder-qemu-chroot
 
 vendor:
