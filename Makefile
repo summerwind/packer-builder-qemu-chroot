@@ -12,7 +12,7 @@ build: vendor
 	go build $(BUILD_FLAGS) .
 
 .PHONY: test
-test:
+test: vendor
 	go test -v $(PACKAGES)
 	go vet $(PACKAGES)
 
