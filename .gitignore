@@ -1,0 +1,4 @@
+packer-builder-qemu-chroot
+output-qemu-chroot/
+vendor/
+

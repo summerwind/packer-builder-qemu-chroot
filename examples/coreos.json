@@ -1,0 +1,28 @@
+{
+  "builders": [
+    {
+      "type": "qemu-chroot",
+      "source_image": "coreos_production_openstack_image.img",
+      "image_name": "coreos.img",
+      "device_path": "/dev/nbd0",
+      "mount_partition": 9,
+      "chroot_mounts": [
+        ["proc", "proc", "/proc"],
+        ["sysfs", "sysfs", "/sys"],
+        ["bind", "/dev", "/dev"],
+        ["devpts", "devpts", "/dev/pts"],
+        ["binfmt_misc", "binfmt_misc", "/proc/sys/fs/binfmt_misc"],
+        ["ext4", "/dev/nbd0p3", "/usr", "ro"]
+      ],
+      "compression": true
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "ls -al /usr"
+      ]
+    }
+  ] 
+}
