@@ -1,0 +1,37 @@
+version: '2'
+
+vars:
+  NAME: packer-builder-qemu-chroot
+  VERSION: 1.0.0
+  COMMIT: {sh: git rev-parse --verify HEAD}
+  BUILD_FLAGS: -ldflags "-X main.VERSION={{.VERSION}} -X main.COMMIT={{.COMMIT}}"
+
+tasks:
+  build:
+    cmds:
+      - go build {{.BUILD_FLAGS}} .
+  test:
+    cmds:
+      - go vet ./...
+      - go test -v -coverprofile=cover.out ./...
+  cover:
+    deps: [test]
+    cmds:
+      - go tool cover -html=cover.out
+  package:
+    cmds:
+      - GOOS={{.OS}} GOARCH={{.ARCH}} go build {{.BUILD_FLAGS}} .
+      - tar -czf dist/{{.NAME}}_{{.OS}}_{{.ARCH}}.tar.gz {{.NAME}}
+      - rm -rf {{.NAME}}
+  dist:
+    deps: [test]
+    cmds:
+      - mkdir -p dist
+      - task: package
+        vars: {OS: "linux", ARCH: "amd64"}
+  vendor:
+    cmds:
+      - dep ensure -v
+  clean:
+    cmds:
+      - rm -rf {{.NAME}} dist cover.out

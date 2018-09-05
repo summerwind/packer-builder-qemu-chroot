@@ -1,4 +1,5 @@
 packer-builder-qemu-chroot
+cover.out
 output-qemu-chroot/
 vendor/
-
+dist/
