@@ -18,15 +18,16 @@ Download the binary from the [Releases](https://github.com/summerwind/packer-bui
 - `~/.packer.d/plugins` on Unix systems or `%APPDATA%/packer.d/plugins` on Windows
 - The current working directory
 
-## Build plugin
+## Building plugin
 
-You can build this plugin with the following command. Please install [Glide](https://github.com/Masterminds/glide) before the build.
+To build the binary you need to install [Go](https://golang.org/), [dep](https://github.com/golang/dep) and [task](https://github.com/go-task/task).
 
 ```
-$ make
+$ task vendor
+$ task build
 ```
 
-## How Does it Work?
+## How does it work?
 
 This plugin mounts the specified QCOW2 format image to the file system using the `qemu-nbd` command. Once mounted, a `chroot` command is used to provision the system within the image. After provisioning, the image is unmounted and save it as the QCOW2 format.
 
