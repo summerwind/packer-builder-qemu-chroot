@@ -1,15 +1,16 @@
 package chroot
 
 import (
+	"context"
 	"fmt"
 	"log"
 
-	"github.com/mitchellh/multistep"
+	"github.com/hashicorp/packer/helper/multistep"
 )
 
 type StepEarlyCleanup struct{}
 
-func (s *StepEarlyCleanup) Run(state multistep.StateBag) multistep.StepAction {
+func (s *StepEarlyCleanup) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
 	keys := []string{
 		"copy_files_cleanup",
 		"mount_extra_cleanup",

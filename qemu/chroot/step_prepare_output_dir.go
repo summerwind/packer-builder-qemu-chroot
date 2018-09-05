@@ -1,20 +1,21 @@
 package chroot
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
-	"github.com/mitchellh/multistep"
 )
 
 type StepPrepareOutputDir struct {
 	success bool
 }
 
-func (s *StepPrepareOutputDir) Run(state multistep.StateBag) multistep.StepAction {
+func (s *StepPrepareOutputDir) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 

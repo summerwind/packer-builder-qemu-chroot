@@ -2,6 +2,7 @@ package chroot
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -10,15 +11,15 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
-	"github.com/mitchellh/multistep"
 )
 
 type StepMountExtra struct {
 	mountPaths []string
 }
 
-func (s *StepMountExtra) Run(state multistep.StateBag) multistep.StepAction {
+func (s *StepMountExtra) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 	mountPath := state.Get("mount_path").(string)

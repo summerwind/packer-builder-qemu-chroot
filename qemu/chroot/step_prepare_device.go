@@ -1,14 +1,15 @@
 package chroot
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
-	"github.com/mitchellh/multistep"
 )
 
 const (
@@ -17,7 +18,7 @@ const (
 
 type StepPrepareDevice struct{}
 
-func (s *StepPrepareDevice) Run(state multistep.StateBag) multistep.StepAction {
+func (s *StepPrepareDevice) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 

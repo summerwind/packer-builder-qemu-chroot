@@ -1,21 +1,22 @@
 package chroot
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
-	"github.com/mitchellh/multistep"
 )
 
 type StepPrepareImage struct {
 	imagePath string
 }
 
-func (s *StepPrepareImage) Run(state multistep.StateBag) multistep.StepAction {
+func (s *StepPrepareImage) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 
