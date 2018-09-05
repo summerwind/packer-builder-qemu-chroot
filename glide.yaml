@@ -1,6 +1,0 @@
-package: github.com/summerwind/packer-builder-qemu-chroot
-import:
-- package: github.com/hashicorp/packer
-  varsion: e3d65a193e96c7b228589fc9699e39998ec12e4e
-- package: github.com/mitchellh/multistep
-  version: 391576a156a54cfbb4cf5d5eda40cf6ffa3e3a4d
