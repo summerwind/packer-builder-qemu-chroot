@@ -2,7 +2,7 @@ version: '2'
 
 vars:
   NAME: packer-builder-qemu-chroot
-  VERSION: 1.0.0
+  VERSION: 1.1.0
   COMMIT: {sh: git rev-parse --verify HEAD}
   BUILD_FLAGS: -ldflags "-X main.VERSION={{.VERSION}} -X main.COMMIT={{.COMMIT}}"
 
