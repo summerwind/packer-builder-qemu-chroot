@@ -82,7 +82,7 @@ $ sudo packer build template.json
 
 ### Optional
 
-- `output_dir` (string) - This is the path to the directory where the resulting image file will be created. By default this is "output-BUILDNAME" where "BUILDNAME" is the name of the builder.
+- `output_directory` (string) - This is the path to the directory where the resulting image file will be created. By default this is "output-BUILDNAME" where "BUILDNAME" is the name of the builder.
 - `image_name` (string) - The name of the resulting image file.
 - `compression` (boolean) - Apply compression to the QCOW2 disk file using `qemu-img` convert. Defaults to false.
 - `device_path` (string) - The path to the device where the volume of the source image will be attached.
