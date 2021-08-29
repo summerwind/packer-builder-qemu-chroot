@@ -12,7 +12,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/hashicorp/packer/packer"
+	"github.com/hashicorp/packer-plugin-sdk/common"
+	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
 
 // Communicator is a special communicator that works by executing
@@ -29,7 +30,7 @@ func (c *Communicator) Start(rc *packer.RemoteCmd) error {
 		return err
 	}
 
-	localCmd := NewShellCommand(cmd)
+	localCmd := common.ShellCommand(cmd)
 	localCmd.Stdin = rc.Stdin
 	localCmd.Stdout = rc.Stdout
 	localCmd.Stderr = rc.Stderr
@@ -78,7 +79,7 @@ func (c *Communicator) Upload(dst string, r io.Reader, fi *os.FileInfo) error {
 		return err
 	}
 
-	return NewShellCommand(cmd).Run()
+	return common.ShellCommand(cmd).Run()
 }
 
 func (c *Communicator) UploadDir(dst string, src string, exclude []string) error {
@@ -100,7 +101,7 @@ func (c *Communicator) UploadDir(dst string, src string, exclude []string) error
 	}
 
 	stderr := new(bytes.Buffer)
-	shell := NewShellCommand(cmd)
+	shell := common.ShellCommand(cmd)
 	shell.Env = append(shell.Env, "LANG=C")
 	shell.Env = append(shell.Env, os.Environ()...)
 	shell.Stderr = stderr
@@ -117,7 +118,38 @@ func (c *Communicator) UploadDir(dst string, src string, exclude []string) error
 }
 
 func (c *Communicator) DownloadDir(src string, dst string, exclude []string) error {
-	return fmt.Errorf("DownloadDir is not implemented for packer-builder-qemu-chroot")
+	// If src ends with a trailing "/", copy from "src/." so that
+	// directory contents (including hidden files) are copied, but the
+	// directory "src" is omitted.  BSD does this automatically when
+	// the source contains a trailing slash, but linux does not.
+	if src[len(src)-1] == '/' {
+		src = src + "."
+	}
+
+	// TODO: remove any file copied if it appears in `exclude`
+	chrootSrc := filepath.Join(c.Chroot, src)
+	log.Printf("Uploading directory '%s' to '%s'", chrootSrc, dst)
+
+	cmd, err := c.CmdWrapper(fmt.Sprintf("cp -R '%s' %s", chrootSrc, dst))
+	if err != nil {
+					return err
+	}
+
+	stderr := new(bytes.Buffer)
+	shell := common.ShellCommand(cmd)
+	shell.Env = append(shell.Env, "LANG=C")
+	shell.Env = append(shell.Env, os.Environ()...)
+	shell.Stderr = stderr
+	if err := shell.Run(); err == nil {
+					return err
+	}
+
+	if strings.Contains(stderr.String(), "No such file") {
+					// This just means that the directory was empty. Just ignore it.
+					return nil
+	}
+
+	return err
 }
 
 func (c *Communicator) Download(src string, w io.Writer) error {

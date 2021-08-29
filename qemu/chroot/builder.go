@@ -1,17 +1,24 @@
+//go:generate packer-sdc struct-markdown
+//go:generate packer-sdc mapstructure-to-hcl2 -type Config
+// see more at https://www.packer.io/guides/hcl/component-object-spec
+
 package chroot
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os/exec"
 	"runtime"
 
-	"github.com/hashicorp/packer/common"
-	"github.com/hashicorp/packer/helper/config"
-	"github.com/hashicorp/packer/helper/multistep"
-	"github.com/hashicorp/packer/packer"
-	"github.com/hashicorp/packer/template/interpolate"
+	"github.com/hashicorp/hcl/v2/hcldec"
+	"github.com/hashicorp/packer-plugin-sdk/chroot"
+	"github.com/hashicorp/packer-plugin-sdk/common"
+	"github.com/hashicorp/packer-plugin-sdk/multistep"
+	"github.com/hashicorp/packer-plugin-sdk/multistep/commonsteps"
+	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
+	"github.com/hashicorp/packer-plugin-sdk/template/config"
+	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 )
 
 // Config represents a configuration of builder.
@@ -33,6 +40,10 @@ type Config struct {
 	ctx interpolate.Context
 }
 
+func (c *Config) GetContext() interpolate.Context {
+	return c.ctx
+}
+
 // Cleaner is an interface with a function for cleanup.
 type Cleaner interface {
 	CleanupFunc(multistep.StateBag) error
@@ -44,19 +55,21 @@ type Builder struct {
 	runner multistep.Runner
 }
 
+func (b *Builder) ConfigSpec() hcldec.ObjectSpec { return b.config.FlatMapstructure().HCL2Spec() }
+
 // NewBuilder returns a Builder.
 func NewBuilder() *Builder {
 	return new(Builder)
 }
 
 // Prepare validates given configuration.
-func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
+func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	err := config.Decode(&b.config, &config.DecodeOpts{
 		Interpolate:        true,
 		InterpolateContext: &b.config.ctx,
 	}, raws...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if b.config.OutputDir == "" {
@@ -102,24 +115,38 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	// Accumulate any errors or warnings
-	var errs *packer.MultiError
+	var errs *packersdk.MultiError
 	var warns []string
 
 	if b.config.SourceImage == "" {
-		errs = packer.MultiErrorAppend(errs, errors.New("source_image is required."))
+		errs = packersdk.MultiErrorAppend(errs, errors.New("source_image is required."))
+	}
+
+	for _, mounts := range b.config.ChrootMounts {
+		if len(mounts) != 3 {
+			errs = packersdk.MultiErrorAppend(
+				errs, errors.New("Each chroot_mounts entry should be three elements."))
+			break
+		}
 	}
 
 	if errs != nil && len(errs.Errors) > 0 {
-		return warns, errs
+		return nil, warns, errs
 	}
 
-	return warns, nil
+	generatedData := []string{
+		"ImageName",
+		"OutputDir",
+		"MountPath",
+	}
+
+	return generatedData, warns, nil
 }
 
 // Run runs each step of the plugin in order.
-func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packer.Artifact, error) {
+func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook) (packersdk.Artifact, error) {
 	if runtime.GOOS != "linux" {
-		return nil, errors.New("The amazon-chroot builder only works on Linux environments.")
+		return nil, errors.New("The packer-qemu-chroot builder only works on Linux environments.")
 	}
 
 	_, err := exec.LookPath("qemu-nbd")
@@ -139,15 +166,15 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&StepPrepareDevice{},
 		&StepConnectImage{},
 		&StepMountDevice{},
-		&StepMountExtra{},
-		&StepCopyFiles{},
-		&StepChrootProvision{},
-		&StepEarlyCleanup{},
+		&chroot.StepMountExtra{},
+		&chroot.StepCopyFiles{},
+		&chroot.StepChrootProvision{},
+		&chroot.StepEarlyCleanup{},
 		&StepCompressImage{},
 	}
 
-	b.runner = common.NewRunner(steps, b.config.PackerConfig, ui)
-	b.runner.Run(state)
+	b.runner = commonsteps.NewRunner(steps, b.config.PackerConfig, ui)
+	b.runner.Run(ctx, state)
 
 	if rawErr, ok := state.GetOk("error"); ok {
 		return nil, rawErr.(error)
@@ -169,12 +196,4 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	}
 
 	return artifact, nil
-}
-
-// Cancel executes processing at cancel.
-func (b *Builder) Cancel() {
-	if b.runner != nil {
-		log.Println("Cancelling the step runner...")
-		b.runner.Cancel()
-	}
 }

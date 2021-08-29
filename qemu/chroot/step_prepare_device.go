@@ -8,19 +8,23 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hashicorp/packer/helper/multistep"
-	"github.com/hashicorp/packer/packer"
+	"github.com/hashicorp/packer-plugin-sdk/multistep"
+	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
+	"github.com/hashicorp/packer-plugin-sdk/packerbuilderdata"
 )
 
 const (
 	devicePrefix string = "nbd"
 )
 
-type StepPrepareDevice struct{}
+// StepPrepareDevice finds an available device and sets it.
+type StepPrepareDevice struct {
+	GeneratedData *packerbuilderdata.GeneratedData
+}
 
 func (s *StepPrepareDevice) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
-	ui := state.Get("ui").(packer.Ui)
+	ui := state.Get("ui").(packersdk.Ui)
 
 	ui.Say("Finding available device...")
 
@@ -44,7 +48,7 @@ func (s *StepPrepareDevice) Run(_ context.Context, state multistep.StateBag) mul
 
 	log.Printf("Device: %s", devicePath)
 	state.Put("device", devicePath)
-
+	s.GeneratedData.Put("Device", devicePath)
 	return multistep.ActionContinue
 }
 

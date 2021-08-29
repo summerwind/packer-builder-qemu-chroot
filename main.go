@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/hashicorp/packer/packer/plugin"
+	"github.com/hashicorp/packer-plugin-sdk/plugin"
 	"github.com/summerwind/packer-builder-qemu-chroot/qemu/chroot"
 )
 
