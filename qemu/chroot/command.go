@@ -1,8 +1,6 @@
 package chroot
 
 import (
-	"os/exec"
-
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 )
 

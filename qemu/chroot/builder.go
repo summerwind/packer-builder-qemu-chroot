@@ -1,4 +1,3 @@
-//go:generate packer-sdc struct-markdown
 //go:generate packer-sdc mapstructure-to-hcl2 -type Config
 // see more at https://www.packer.io/guides/hcl/component-object-spec
 
