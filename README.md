@@ -4,11 +4,11 @@ A builder plugin of Packer to support building QEMU images within chroot.
 
 ## Prerequirements
 
-This plugin depends on the following tools:
+This plugin depends on the following:
 
-- Packer
-- QEMU Utilities (`qemu-nbd` and `qemu-img`)
-- NBD kernel module
+- [Packer](https://github.com/hashicorp/packer)
+- [QEMU Utilities](https://www.qemu.org) (`qemu-nbd` and `qemu-img`)
+- [Network block device](https://github.com/NetworkBlockDevice/nbd) (NBD) kernel module
 
 ## Install
 
@@ -20,11 +20,11 @@ Download the binary from the [Releases](https://github.com/summerwind/packer-bui
 
 ## Building plugin
 
-To build the binary you need to install [Go](https://golang.org/), [dep](https://github.com/golang/dep) and [task](https://github.com/go-task/task).
+To build the binary you need to install [Go](https://golang.org/), [packer-sdc](https://www.packer.io/guides/hcl/component-object-spec) and [task](https://github.com/go-task/task).
 
-```
-$ task vendor
-$ task build
+```sh
+> task vendor
+> task build
 ```
 
 ## How does it work?
@@ -37,17 +37,17 @@ Using this process eliminates the need to start the virtual machine, so you can 
 
 To use this plugin, you need to load the NBD kernel module first. Note that this process must be executed on a Linux.
 
-```
-$ sudo modprobe nbd
+```sh
+sudo modprobe nbd
 ```
 
 Prepare the following template file.
 
-```
-$ vim template.json
+```sh
+vim template.json
 ```
 
-```
+```json
 {
   "builders": [
     {
@@ -64,14 +64,14 @@ $ vim template.json
         "apt update"
       ]
     }
-  ] 
+  ]
 }
 ```
 
 Once you have the template, build it using Packer.
 
-```
-$ sudo packer build template.json
+```sh
+sudo packer build template.json
 ```
 
 ## Configuration Reference
@@ -82,16 +82,18 @@ $ sudo packer build template.json
 
 ### Optional
 
-- `output_directory` (string) - This is the path to the directory where the resulting image file will be created. By default this is "output-BUILDNAME" where "BUILDNAME" is the name of the builder.
+- `output_directory` (string) - This is the path to the directory where the resulting image file will be created. By default this is `output-BUILDNAME` where "BUILDNAME" is the name of the builder.
 - `image_name` (string) - The name of the resulting image file.
 - `compression` (boolean) - Apply compression to the QCOW2 disk file using `qemu-img` convert. Defaults to false.
 - `device_path` (string) - The path to the device where the volume of the source image will be attached.
-- `mount_path` (string) - The path where the volume will be mounted. This is where the chroot environment will be. This defaults to /mnt/packer-builder-qemu-chroot/{{.Device}}. This is a configuration template where the .Device variable is replaced with the name of the device where the volume is attached.
-- `mount_partition` (integer) - The partition number containing the / partition. By default this is the first partition of the volume.
+- `mount_path` (string) - The path where the volume will be mounted. This is where the chroot environment will be. This defaults to `/mnt/packer-builder-qemu-chroot/{{.Device}}`.
+This is a configuration template where the `.Device` variable is replaced with the name of the device where the volume is attached.
+- `mount_partition` (integer) - The partition number containing the `/` partition. By default this is the first partition of the volume.
 - `mount_options` (array of string) - Options to supply the mount command when mounting devices. Each option will be prefixed with `-o` and supplied to the mount command ran by this plugin.
 - `chroot_mounts` (array of array of string) - This is a list of devices to mount into the chroot environment. This configuration parameter requires some additional documentation which is in the "Chroot Mounts" section below. Please read that section for more information on how to use this.
-- `copy_files` (array of string) - Paths to files on the running EC2 instance that will be copied into the chroot environment prior to provisioning. Defaults to /etc/resolv.conf so that DNS lookups work. Pass an empty list to skip copying /etc/resolv.conf. You may need to do this if you're building an image that uses systemd.
-- `command_wrapper` (string) - How to run shell commands. This defaults to {{.Command}}. This may be useful to set if you want to set environmental variables or perhaps run it with sudo or so on. This is a configuration template where the .Command variable is replaced with the command to be run. Defaults to "{{.Command}}".
+- `copy_files` (array of string) - Paths to files on the running EC2 instance that will be copied into the chroot environment prior to provisioning. Defaults to `/etc/resolv.conf` so that DNS lookups work. Pass an empty list to skip copying `/etc/resolv.conf`.
+You may need to do this if you're building an image that uses systemd.
+- `command_wrapper` (string) - How to run shell commands. This defaults to `{{.Command}}`. This may be useful to set if you want to set environmental variables or perhaps run it with sudo or so on. This is a configuration template where the .Command variable is replaced with the command to be run.
 
 ### Chroot Mounts
 
@@ -103,9 +105,9 @@ The `chroot_mounts` configuration can be used to mount specific devices within t
 - `/dev/pts` (devpts)
 - `/proc/sys/fs/binfmt_misc` (binfmt_misc)
 
-These default mounts are usually good enough for anyone and are sane defaults. However, if you want to change or add the mount points, you may using the chroot_mounts configuration. Here is an example configuration which only mounts /prod and /dev:
+These default mounts are usually good enough for anyone and are sane defaults. However, if you want to change or add the mount points, you may using the chroot_mounts configuration. Here is an example configuration which only mounts `/prod` and `/dev`:
 
-```
+```json
 {
   "chroot_mounts": [
     ["proc", "proc", "/proc"],
@@ -126,4 +128,3 @@ These default mounts are usually good enough for anyone and are sane defaults. H
 Mozilla Public License 2.0
 
 Note that this plugin is implemented by forking [AMI Builder (chroot)](https://www.packer.io/docs/builders/amazon-chroot.html) of Packer.
-

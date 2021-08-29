@@ -36,7 +36,8 @@ tasks:
         vars: { OS: "linux", ARCH: "amd64" }
   vendor:
     cmds:
-      - dep ensure -v
+      - go mod init github.com/summerwind/packer-builder-qemu-chroot || true
+      - go mod tidy
   clean:
     cmds:
       - rm -rf {{.NAME}} dist cover.out
