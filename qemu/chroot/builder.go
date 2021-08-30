@@ -20,6 +20,14 @@ import (
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 )
 
+const BuilderId = "summerwind.qemu-chroot"
+
+// Builder represents a builder plugin for Packer.
+type Builder struct {
+	config Config
+	runner multistep.Runner
+}
+
 // Config represents a configuration of builder.
 type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
@@ -48,18 +56,7 @@ type Cleaner interface {
 	CleanupFunc(multistep.StateBag) error
 }
 
-// Builder represents a builder plugin for Packer.
-type Builder struct {
-	config Config
-	runner multistep.Runner
-}
-
 func (b *Builder) ConfigSpec() hcldec.ObjectSpec { return b.config.FlatMapstructure().HCL2Spec() }
-
-// NewBuilder returns a Builder.
-func NewBuilder() *Builder {
-	return new(Builder)
-}
 
 // Prepare validates given configuration.
 func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
