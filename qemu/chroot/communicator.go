@@ -128,7 +128,7 @@ func (c *Communicator) DownloadDir(src string, dst string, exclude []string) err
 
 	// TODO: remove any file copied if it appears in `exclude`
 	chrootSrc := filepath.Join(c.Chroot, src)
-	log.Printf("Uploading directory '%s' to '%s'", chrootSrc, dst)
+	log.Printf("Downloading directory '%s' to '%s'", chrootSrc, dst)
 
 	cmd, err := c.CmdWrapper(fmt.Sprintf("cp -R '%s' %s", chrootSrc, dst))
 	if err != nil {
