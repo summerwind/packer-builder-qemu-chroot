@@ -23,7 +23,7 @@ func (s *StepConnectImage) Run(_ context.Context, state multistep.StateBag) mult
 	wrappedCommand := state.Get("wrappedCommand").(common.CommandWrapper)
 	stderr := new(bytes.Buffer)
 
-	ui.Say("Connecting source image as a network block device...")
+	ui.Say(fmt.Sprintf("Connecting source image as a network block device to %s...", device))
 
 	cmd, err := wrappedCommand(fmt.Sprintf("qemu-nbd -c %s %s", device, imagePath))
 	if err != nil {
@@ -45,7 +45,8 @@ func (s *StepConnectImage) Run(_ context.Context, state multistep.StateBag) mult
 	time.Sleep(1 * time.Second)
 
 	s.device = device
-	state.Put("connect_image_cleanup", s)
+	// different step naming in the common library (https://github.com/hashicorp/packer-plugin-sdk/blob/main/chroot/step_early_cleanup.go)
+	state.Put("attach_cleanup", s)
 
 	return multistep.ActionContinue
 }
@@ -65,7 +66,7 @@ func (s *StepConnectImage) CleanupFunc(state multistep.StateBag) error {
 		return nil
 	}
 
-	ui.Say("Disconnecting the source image...")
+	ui.Say(fmt.Sprintf("Disconnecting the source image from %s...", s.device))
 	cmd, err := wrappedCommand(fmt.Sprintf("qemu-nbd -d %s", s.device))
 	if err != nil {
 		return fmt.Errorf("Error creating disconnect command: %s", err)

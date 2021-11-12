@@ -1,4 +1,4 @@
-packer-builder-qemu-chroot
+packer-plugin-qemu-chroot
 cover.out
 output-qemu-chroot/
 vendor/

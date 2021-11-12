@@ -1,4 +1,4 @@
-module github.com/summerwind/packer-builder-qemu-chroot
+module github.com/summerwind/packer-plugin-qemu-chroot
 
 go 1.17
 

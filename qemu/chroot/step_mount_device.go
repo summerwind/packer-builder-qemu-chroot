@@ -22,7 +22,7 @@ type mountPathData struct {
 
 type StepMountDevice struct {
 	MountOptions   []string
-	MountPartition string
+	MountPartition int
 
 	mountPath     string
 	GeneratedData *packerbuilderdata.GeneratedData
@@ -57,7 +57,7 @@ func (s *StepMountDevice) Run(_ context.Context, state multistep.StateBag) multi
 		return halt(state, err)
 	}
 
-	ui.Say("Mounting the root device...")
+	ui.Say(fmt.Sprintf("Mounting the root device at %s...", mountPath))
 	stderr := new(bytes.Buffer)
 
 	opts := ""

@@ -29,7 +29,7 @@ func (s *StepPrepareOutputDir) Run(_ context.Context, state multistep.StateBag) 
 		os.RemoveAll(config.OutputDir)
 	}
 
-	ui.Say("Creating output directory...")
+	ui.Say(fmt.Sprintf("Creating output directory %s...", config.OutputDir))
 	if err := os.MkdirAll(config.OutputDir, 0755); err != nil {
 		err := fmt.Errorf("Error creating output directory: %s", config.OutputDir)
 		return halt(state, err)

@@ -6,8 +6,7 @@ import (
 
 	"github.com/hashicorp/packer-plugin-sdk/plugin"
 	"github.com/hashicorp/packer-plugin-sdk/version"
-
-	"github.com/summerwind/packer-builder-qemu-chroot/qemu/chroot"
+	"github.com/summerwind/packer-plugin-qemu-chroot/qemu/chroot"
 )
 
 var (
@@ -26,7 +25,7 @@ var (
 
 func main() {
 	pps := plugin.NewSet()
-	pps.RegisterBuilder("qemu-chroot", new(chroot.Builder))
+	pps.RegisterBuilder(plugin.DEFAULT_NAME, new(chroot.Builder))
 	pps.SetVersion(PluginVersion)
 
 	err := pps.Run()
