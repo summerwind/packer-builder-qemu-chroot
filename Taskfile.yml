@@ -1,13 +1,18 @@
-version: '2'
+---
+version: "3"
 
 vars:
-  NAME: packer-builder-qemu-chroot
-  VERSION: 1.1.0
-  COMMIT: {sh: git rev-parse --verify HEAD}
+  NAME: packer-plugin-qemu-chroot
+  VERSION: 1.1.0-u1
+  COMMIT: { sh: git rev-parse --verify HEAD }
   BUILD_FLAGS: -ldflags "-X main.VERSION={{.VERSION}} -X main.COMMIT={{.COMMIT}}"
 
 tasks:
+  generate:
+    cmds:
+      - go generate github.com/summerwind/packer-plugin-qemu-chroot/qemu/chroot
   build:
+    deps: [generate]
     cmds:
       - go build {{.BUILD_FLAGS}} .
   test:
@@ -28,10 +33,11 @@ tasks:
     cmds:
       - mkdir -p dist
       - task: package
-        vars: {OS: "linux", ARCH: "amd64"}
+        vars: { OS: "linux", ARCH: "amd64" }
   vendor:
     cmds:
-      - dep ensure -v
+      - go mod init github.com/summerwind/packer-plugin-qemu-chroot || true
+      - go mod tidy
   clean:
     cmds:
       - rm -rf {{.NAME}} dist cover.out

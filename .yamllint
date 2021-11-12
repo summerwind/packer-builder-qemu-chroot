@@ -1,0 +1,21 @@
+---
+extends: default
+ignore: |
+  .git/
+  *_cache/
+  *-info/
+  build/
+  dist/
+  output-qemu-chroot/
+  vendor/
+  tmp/
+
+rules:
+  braces:
+    min-spaces-inside: 1
+    max-spaces-inside: 1
+  comments:
+    min-spaces-from-content: 1
+  empty-values: enable
+  line-length:
+    max: 120

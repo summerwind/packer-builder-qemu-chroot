@@ -1,38 +1,46 @@
+// XXX: clean-up upon resolution of https://github.com/hashicorp/packer-plugin-sdk/issues/89
+// TODO: use Communicator & ChrootProvision from SDK/common
+
 package chroot
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
-	"github.com/hashicorp/packer/packer"
+	"github.com/hashicorp/packer-plugin-sdk/common"
+	"github.com/hashicorp/packer-plugin-sdk/packer"
+	"github.com/hashicorp/packer-plugin-sdk/tmp"
 )
 
 // Communicator is a special communicator that works by executing
 // commands locally but within a chroot.
 type Communicator struct {
 	Chroot     string
-	CmdWrapper CommandWrapper
+	CmdWrapper common.CommandWrapper
 }
 
-func (c *Communicator) Start(rc *packer.RemoteCmd) error {
-	cmd := fmt.Sprintf("chroot %s /bin/sh -c \"%s\"", c.Chroot, rc.Command)
-	cmd, err := c.CmdWrapper(cmd)
+func (c *Communicator) Start(ctx context.Context, cmd *packer.RemoteCmd) error {
+	// need extra escapes for the command since we're wrapping it in quotes
+	cmd.Command = strconv.Quote(cmd.Command)
+	command, err := c.CmdWrapper(
+		fmt.Sprintf("chroot %s /bin/sh -c %s", c.Chroot, cmd.Command))
 	if err != nil {
 		return err
 	}
 
-	localCmd := NewShellCommand(cmd)
-	localCmd.Stdin = rc.Stdin
-	localCmd.Stdout = rc.Stdout
-	localCmd.Stderr = rc.Stderr
+	localCmd := common.ShellCommand(command)
+	localCmd.Stdin = cmd.Stdin
+	localCmd.Stdout = cmd.Stdout
+	localCmd.Stderr = cmd.Stderr
 	log.Printf("Executing: %s %#v", localCmd.Path, localCmd.Args)
 	if err := localCmd.Start(); err != nil {
 		return err
@@ -52,8 +60,8 @@ func (c *Communicator) Start(rc *packer.RemoteCmd) error {
 			}
 		}
 
-		log.Printf("Chroot execution exited with '%d': '%s'", exitStatus, rc.Command)
-		rc.SetExited(exitStatus)
+		log.Printf("Chroot execution exited with '%d': '%s'", exitStatus, cmd.Command)
+		cmd.SetExited(exitStatus)
 	}()
 
 	return nil
@@ -63,7 +71,7 @@ func (c *Communicator) Upload(dst string, r io.Reader, fi *os.FileInfo) error {
 	dst = filepath.Join(c.Chroot, dst)
 	log.Printf("Uploading to chroot dir: %s", dst)
 
-	tf, err := ioutil.TempFile("", "packer-builder-qemu-chroot")
+	tf, err := tmp.File("packer-plugin-qemu-chroot")
 	if err != nil {
 		return fmt.Errorf("Error preparing shell script: %s", err)
 	}
@@ -78,7 +86,7 @@ func (c *Communicator) Upload(dst string, r io.Reader, fi *os.FileInfo) error {
 		return err
 	}
 
-	return NewShellCommand(cmd).Run()
+	return common.ShellCommand(cmd).Run()
 }
 
 func (c *Communicator) UploadDir(dst string, src string, exclude []string) error {
@@ -100,7 +108,7 @@ func (c *Communicator) UploadDir(dst string, src string, exclude []string) error
 	}
 
 	stderr := new(bytes.Buffer)
-	shell := NewShellCommand(cmd)
+	shell := common.ShellCommand(cmd)
 	shell.Env = append(shell.Env, "LANG=C")
 	shell.Env = append(shell.Env, os.Environ()...)
 	shell.Stderr = stderr
@@ -117,7 +125,38 @@ func (c *Communicator) UploadDir(dst string, src string, exclude []string) error
 }
 
 func (c *Communicator) DownloadDir(src string, dst string, exclude []string) error {
-	return fmt.Errorf("DownloadDir is not implemented for packer-builder-qemu-chroot")
+	// If src ends with a trailing "/", copy from "src/." so that
+	// directory contents (including hidden files) are copied, but the
+	// directory "src" is omitted.  BSD does this automatically when
+	// the source contains a trailing slash, but linux does not.
+	if src[len(src)-1] == '/' {
+		src = src + "."
+	}
+
+	// TODO: remove any file copied if it appears in `exclude`
+	chrootSrc := filepath.Join(c.Chroot, src)
+	log.Printf("Downloading directory '%s' to '%s'", chrootSrc, dst)
+
+	cmd, err := c.CmdWrapper(fmt.Sprintf("cp -R '%s' %s", chrootSrc, dst))
+	if err != nil {
+		return err
+	}
+
+	stderr := new(bytes.Buffer)
+	shell := common.ShellCommand(cmd)
+	shell.Env = append(shell.Env, "LANG=C")
+	shell.Env = append(shell.Env, os.Environ()...)
+	shell.Stderr = stderr
+	if err := shell.Run(); err == nil {
+		return err
+	}
+
+	if strings.Contains(stderr.String(), "No such file") {
+		// This just means that the directory was empty. Just ignore it.
+		return nil
+	}
+
+	return err
 }
 
 func (c *Communicator) Download(src string, w io.Writer) error {

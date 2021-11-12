@@ -5,8 +5,6 @@ import (
 	"os"
 )
 
-const BuilderId = "summerwind.qemu-chroot"
-
 type Artifact struct {
 	dir   string
 	files []string

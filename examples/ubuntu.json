@@ -1,6 +1,7 @@
 {
   "builders": [
     {
+      "name": "build-test",
       "type": "qemu-chroot",
       "source_image": "ubuntu-16.04-server-cloudimg-amd64-disk1.img",
       "image_name": "ubuntu-16.04.img",
@@ -14,5 +15,5 @@
         "apt update"
       ]
     }
-  ] 
+  ]
 }
