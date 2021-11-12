@@ -1,29 +1,46 @@
+// XXX: clean-up upon resolution of https://github.com/hashicorp/packer-plugin-sdk/issues/89
+// TODO: use Communicator & ChrootProvision from SDK/common
+
 package chroot
 
 import (
 	"context"
 	"log"
 
-	"github.com/hashicorp/packer/helper/multistep"
-	"github.com/hashicorp/packer/packer"
+	"github.com/hashicorp/packer-plugin-sdk/common"
+	"github.com/hashicorp/packer-plugin-sdk/multistep"
+	"github.com/hashicorp/packer-plugin-sdk/multistep/commonsteps"
+	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 )
 
-type StepChrootProvision struct{}
+// StepChrootProvision provisions the instance within a chroot.
+type StepChrootProvision struct {
+}
 
-func (s *StepChrootProvision) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
-	hook := state.Get("hook").(packer.Hook)
+func (s *StepChrootProvision) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
+	hook := state.Get("hook").(packersdk.Hook)
 	mountPath := state.Get("mount_path").(string)
-	ui := state.Get("ui").(packer.Ui)
-	cmdWrapper := state.Get("command_wrapper").(CommandWrapper)
+	ui := state.Get("ui").(packersdk.Ui)
+	wrappedCommand := state.Get("wrappedCommand").(common.CommandWrapper)
 
+	// Create our communicator
 	comm := &Communicator{
 		Chroot:     mountPath,
-		CmdWrapper: cmdWrapper,
+		CmdWrapper: wrappedCommand,
 	}
 
+	// Loads hook data from builder's state, if it has been set.
+	hookData := commonsteps.PopulateProvisionHookData(state)
+
+	// Update state generated_data with complete hookData
+	// to make them accessible by post-processors
+	state.Put("generated_data", hookData)
+
+	// Provision
 	log.Println("Running the provision hook")
-	if err := hook.Run(packer.HookProvision, ui, comm, nil); err != nil {
-		return halt(state, err)
+	if err := hook.Run(ctx, packersdk.HookProvision, ui, comm, hookData); err != nil {
+		state.Put("error", err)
+		return multistep.ActionHalt
 	}
 
 	return multistep.ActionContinue
