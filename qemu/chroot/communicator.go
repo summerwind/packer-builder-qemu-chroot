@@ -67,7 +67,6 @@ func (c *Communicator) Start(ctx context.Context, cmd *packer.RemoteCmd) error {
 	return nil
 }
 
-
 func (c *Communicator) Upload(dst string, r io.Reader, fi *os.FileInfo) error {
 	dst = filepath.Join(c.Chroot, dst)
 	log.Printf("Uploading to chroot dir: %s", dst)
@@ -140,7 +139,7 @@ func (c *Communicator) DownloadDir(src string, dst string, exclude []string) err
 
 	cmd, err := c.CmdWrapper(fmt.Sprintf("cp -R '%s' %s", chrootSrc, dst))
 	if err != nil {
-					return err
+		return err
 	}
 
 	stderr := new(bytes.Buffer)
@@ -149,12 +148,12 @@ func (c *Communicator) DownloadDir(src string, dst string, exclude []string) err
 	shell.Env = append(shell.Env, os.Environ()...)
 	shell.Stderr = stderr
 	if err := shell.Run(); err == nil {
-					return err
+		return err
 	}
 
 	if strings.Contains(stderr.String(), "No such file") {
-					// This just means that the directory was empty. Just ignore it.
-					return nil
+		// This just means that the directory was empty. Just ignore it.
+		return nil
 	}
 
 	return err
